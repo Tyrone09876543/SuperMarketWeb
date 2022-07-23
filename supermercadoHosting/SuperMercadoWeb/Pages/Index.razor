@@ -1,0 +1,55 @@
+﻿@page "/"
+    <!-- slider-->
+<header class="bg-dark py-5">
+
+    <div id="carouselExampleIndicators" class="carousel carousel-fade slide" data-bs-ride="carousel">
+
+        <div class="carousel-inner">
+            @for(int i =0; i<sliders.Count();i++)
+            {
+                var slider = sliders[i];
+                string style = "carousel-item";
+                if (i <= 0)
+                {
+                   style = "carousel-item active";
+                }
+                if (slider.Imagen != null)
+                {
+                    <div class="@style">
+                        <img src="data:image/jpg; base64,@Convert.ToBase64String(slider.Imagen)" class="d-block w-100" alt="..." style="max-width:1290px; max-height: 400px; opacity: 90%;">
+                    </div>
+
+                }
+                else if (slider.VideoUrl != null)
+                {
+                    <div class="@style" data-bs-interval="90000">
+                        <iframe height="400" src="@("https://www.youtube.com/embed/"+slider.VideoUrl)"
+                                title="YouTube video player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen style="opacity: 90%; width: 100%"></iframe>
+                    </div>
+                }
+            }
+
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev"
+                style=" background: none; border: none;">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next"
+                style=" background: none; border: none;">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
+        </button>
+    </div>
+
+</header>
+<br />
+@code{
+    List<Slider> sliders;
+    protected override void OnInitialized()
+    {
+        sliders = dataContext.Sliders.ToList();
+    }
+}

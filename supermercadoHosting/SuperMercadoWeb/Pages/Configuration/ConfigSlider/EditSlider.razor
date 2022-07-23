@@ -1,0 +1,79 @@
+﻿@page "/Config/EditSlider/{id:int}"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Editar item al Slider</h3>
+<br />
+<AuthorizeView Context="Auth" Roles="Administrator">
+    <Authorized>
+        <h5>Agregue un video o una imagen</h5>
+        <EditForm Model="@slider" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Codigo del video:</label>
+                    <div class="col-md-10">
+                        <InputText type="text" class="form-control" @bind-Value="slider.VideoUrl" placeholder="Ingrese el codigo del video" />
+                        <ValidationMessage For="@(() => slider.VideoUrl)" />
+                    </div>
+                </div>
+                @if (slider.VideoUrl != null)
+                {
+                    @if (slider.VideoUrl.Trim() != "")
+                    {
+                        <iframe width="500" height="281" src="@("https://www.youtube.com/embed/"+@slider.VideoUrl)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    }
+                }
+                <div class="form-group">
+                    <label class="control-label col-md-2">Imagen:</label>
+                    <div class="col-md-10">
+                        <InputFile accept="png, jpeg, jpg" OnChange="HandleFileSelected"></InputFile>
+                        <ValidationMessage For="@(() => slider.Imagen)" />
+                    </div>
+                    @if (imageUrl != null)
+                    {
+                        <img src="@imageUrl" width="200" height="200">
+                    }
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-success">
+                            <i class="oi oi-plus"> Editar</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <label>Usted no cuenta con el nivel de permiso suficiente.</label>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    [Parameter]
+    public int id { get; set; }
+    Slider slider = new Slider();
+    string imageUrl = null;
+    async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var imagenFile = e.GetMultipleFiles().FirstOrDefault();
+        string format = "image/jpg";
+        if (imagenFile != null)
+        {
+            var resized = await imagenFile.RequestImageFileAsync(format, 100, 100);
+            var buffer = new Byte[resized.Size];
+            await resized.OpenReadStream().ReadAsync(buffer);
+            slider.Imagen = buffer;
+            imageUrl = $"data:image/jpg; base64,{Convert.ToBase64String(buffer)}";
+        }
+    }
+    protected override void OnInitialized()
+    {
+        slider = dataContext.Sliders.Find(id);
+    }
+    protected async Task Save()
+    {
+        await dataContext.SaveChangesAsync();
+        await JsRuntime.InvokeVoidAsync("alert", "Item editado");
+    }
+}

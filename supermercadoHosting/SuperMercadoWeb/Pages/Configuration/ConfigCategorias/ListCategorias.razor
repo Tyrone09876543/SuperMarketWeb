@@ -1,0 +1,65 @@
+﻿@page "/Config/ListCategorias"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<label>Buscar Id: </label>
+<input type="number" @bind="Id" />
+<br />
+<button class="btn btn-primary" @onclick="buscar">Buscar</button>
+<h3>Lista de productos</h3>
+
+@if (categorias == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead class="thead-dark">
+            <tr style="text-align:center;">
+                <th scope="col">Id</th>
+                <th scope="col">Nombre</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var categoria in categorias)
+            {
+                <tr style="text-align:center;">
+                    <td>@categoria.Id</td>
+                    <td>@categoria.Nombre</td>
+                    <td>
+                        <a href="/Config/EditCategorias/@categoria.Id" class="btn btn-primary btn-xs" title="Editar">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+
+                        <button @onclick="() => Eliminar(categoria)" class="btn btn-danger btn-xs" title="Eliminar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    int Id;
+    List<Categoria> categorias;
+    void buscar()
+    {
+        categorias = dataContext.Categorias.Where(x => x.Id == Id).ToList();
+    }
+    protected override void OnInitialized()
+    {
+        categorias = dataContext.Categorias.ToList();
+    }
+    protected async Task Eliminar(Categoria categoria)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Estás seguro que quieres eliminar la categoria " + categoria.Id + "?");
+        if (confirmed)
+        {
+            dataContext.Categorias.Remove(categoria);
+            await dataContext.SaveChangesAsync();
+            categorias = dataContext.Categorias.ToList();
+        }
+    }
+}

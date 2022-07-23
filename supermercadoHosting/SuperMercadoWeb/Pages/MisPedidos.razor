@@ -1,0 +1,127 @@
+﻿@page "/MisPedidos"
+@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JsRuntime
+@using Radzen
+@using Radzen.Blazor
+
+
+<h1 class="mb-4" style="width: max-content; border-block-end: 4px solid cornflowerblue; border-radius: 10%">Mis pedidos</h1>
+
+<div class="d-flex mb-3">
+    <button type="button" class="btn btn-primary mr-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Filtrar por Estado" @onclick="actualizar">
+        filtrar
+    </button>
+
+    <select @bind="filtro" class="form-control" style="width: max-content;">
+        <option value="0" selected="selected">Todos</option>
+        <option value="1">Proceso</option>
+        <option value="2">Enviados</option>
+        <option value="3">Completados</option>
+    </select>
+</div>
+
+<div class="d-flex mb-5">
+    <button type="button" class="btn btn-primary mr-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Buscar Id" @onclick="buscar">
+        Buscar
+    </button>
+
+    <input type="number" @bind="Id" placeholder="Buscar Id" style="height:38px" />
+
+</div>
+@if (userId != null)
+{
+
+    <div class="row">
+        <div class="col-x1-6">
+            <RadzenGoogleMap Style="height: 400px; width: 600px; " zoom="@zoom" Center="@(new GoogleMapPosition() {Lat = 0, Lng = 0})">
+                <Markers>
+                    @foreach (var pedido in pedidos)
+                    {
+                        <RadzenGoogleMapMarker Title="@pedido.Id.ToString()" Label="@pedido.Estado" Position="@(new GoogleMapPosition() {Lat = pedido.Latitud, Lng = pedido.Longitud})" />
+                    }
+                </Markers>
+            </RadzenGoogleMap>
+        </div>
+    </div>
+    <br />
+    <br />
+    <br />
+    <table class="table">
+        <thead class="thead-dark">
+            <tr style="text-align:center;">
+                <th scope="col">Id</th>
+                <th scope="col">Usuairo</th>
+                <th scope="col">Total</th>
+                <th scope="col">Estado</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pedido in pedidos)
+            {
+                <tr style="text-align:center;">
+                    <td>@pedido.Id</td>
+                    <td>@pedido.UserId</td>
+                    <td>@pedido.PrecioTotal</td>
+                    <td>@pedido.Estado</td>
+                    <td>
+                        <a href="/MisPedidos/@pedido.Id" class="btn btn-primary btn-xs" title="Detalles">
+                            detalles
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    string filtro = "0";
+    double zoom = 3;
+    List<Pedido> pedidos;
+    bool cargando = true;
+    int Id = 0;
+    string userId;
+    void actualizar()
+    {
+        cargando = true;
+        switch (filtro)
+        {
+            case "1":
+                pedidos = dataContext.Pedidos.Where(x => x.Estado.ToLower().Trim() == "proceso" && x.UserId == userId).ToList();
+                break;
+            case "2":
+                pedidos = dataContext.Pedidos.Where(x => x.Estado.ToLower().Trim() == "enviado" && x.UserId == userId).ToList();
+                break;
+            case "3":
+                pedidos = dataContext.Pedidos.Where(x => x.Estado.ToLower().Trim() == "completado" && x.UserId == userId).ToList();
+                break;
+            default:
+                pedidos = dataContext.Pedidos.Where(x => x.UserId == userId).ToList();
+                break;
+        }
+        cargando = false;
+    }
+    void buscar()
+    {
+        pedidos = dataContext.Pedidos.Where(x => x.Id == Id && x.UserId == userId).ToList();
+    }
+    protected override void OnInitialized()
+    {
+        var principal = HttpContextAccessor.HttpContext.User;
+        userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userId != null)
+        {
+            pedidos = dataContext.Pedidos.Where(x => x.UserId == userId).OrderByDescending(x => x.Id).ToList();
+        }
+        else
+        {
+            alerta("Debe estar logeado para esto");
+        }
+    }
+    async Task alerta(string mensaje)
+    {
+        await JsRuntime.InvokeVoidAsync("alert", mensaje);
+    }
+}

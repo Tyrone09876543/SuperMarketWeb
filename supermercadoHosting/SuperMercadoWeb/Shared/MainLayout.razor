@@ -1,0 +1,58 @@
+﻿@inherits LayoutComponentBase
+
+@*<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <div class="main">
+        <div class="top-row px-4">
+            <LoginDisplay />
+        </div>
+
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>
+</div>*@
+
+<div class="page">
+    <div class="main">
+        <NavMenu />
+        <section class="pb-5">
+            <div class="container px-4 px-lg-5 mt-5">
+                @Body
+            </div>
+        </section>
+        <!-- Footer-->
+        <footer class="footer text-center bg-dark text-white mt-5 p-5">
+            <div class="container">
+                <div class="row">
+                    <!-- ubicacion-->
+                    <div class="col-lg-4 mb-5 mb-lg-0">
+                        <h4 class="text-uppercase mb-4">Ubicacion</h4>
+                        <p class="lead mb-0">
+                            Instituto tecnologico de las America
+                        </p>
+                    </div>
+                    <!-- redes sociales-->
+                    <div class="col-lg-4 mb-5 mb-lg-0">
+                        <h4 class="text-uppercase mb-4">Redes sociales</h4>
+                        <a class="btn btn-outline-light btn-social mx-1" href="https://es-la.facebook.com/ITLARD/"><i class="bi bi-facebook" style="color:#6495ed"></i></a>
+                        <a class="btn btn-outline-light btn-social mx-1" href="https://itla.edu.do/"><i class="bi bi-twitch" style="color:#6495ed"></i></a>
+                        <a class="btn btn-outline-light btn-social mx-1" href="https://www.instagram.com/itlard/?hl=es-la"><i class="bi bi-instagram" style="color:#6495ed"></i></a>
+                        <a class="btn btn-outline-light btn-social mx-1" href="https://www.youtube.com/user/itlavirtual"><i class="bi bi-youtube" style="color:#6495ed"></i></a>
+                    </div>
+                    <!-- integrantes-->
+                    <div class="col-lg-4">
+                        <h4 class="text-uppercase mb-4">Integrantes</h4>
+                        <p class="lead mb-0"> Jose Rosario Ureña. 2019-7807. </p>
+                        <p class="lead mb-0"> Suriel Rodriguez Quezada, 2019-7706</p>
+                        <p class="lead mb-0"> Reylin Lantigua Martínez 2019-8111</p>
+                        <p class="lead mb-0"> Ysaac Andujar Binet 2019-8851</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>

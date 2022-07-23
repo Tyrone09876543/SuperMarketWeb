@@ -1,0 +1,104 @@
+﻿@page "/Config/AddProducts"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Agregar Producto</h3>
+<AuthorizeView Context="Auth" Roles="Administrator">
+    <Authorized>
+        <EditForm Model="@producto" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Nombre:</label>
+                    <div class="col-md-10">
+                        <InputText type="text" class="form-control" @bind-Value="producto.Nombre" placeholder="Ingrese el nombre del producto" />
+                        <ValidationMessage For="@(() => producto.Nombre)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Precio:</label>
+                    <div class="col-md-10">
+                        <InputNumber type="number" class="form-control" @bind-Value="producto.Precio" placeholder="Ingrese el precio" />
+                        <ValidationMessage For="@(() => producto.Precio)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Categoria:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="producto.CategoriaId" class="form-control">
+                            <option value="0" selected disabled hidden>-- Selecciona una cateogria --</option>
+                            @foreach (var categoria in categorias)
+                            {
+                                <option value="@categoria.Id">@categoria.Nombre</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => producto.CategoriaId)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Cantidad:</label>
+                    <div class="col-md-10">
+                        <InputNumber class="form-control" @bind-Value="producto.Cantidad" />
+                        <ValidationMessage For="@(() => producto.Cantidad)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Imagen:</label>
+                    <div class="col-md-10">
+                        <InputFile accept="png, jpeg, jpg" OnChange="HandleFileSelected"></InputFile>
+                        <ValidationMessage For="@(() => producto.Imagen)" />
+                    </div>
+                    @if (imageUrl != null)
+                    {
+                        <br />
+                        <img src="@imageUrl" style="height:200px; max-width:300px;">
+                    }
+                </div>
+
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-success">
+                            <i class="oi oi-plus"> Agragar Producto</i>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <label>Usted no cuenta con el nivel de permiso suficiente.</label>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    private Producto producto = new Producto();
+    List<Categoria> categorias = new List<Categoria>();
+    string imageUrl = null;
+    async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var imagenFile = e.GetMultipleFiles().FirstOrDefault();
+        if (imagenFile != null)
+        {
+            var buffer = new Byte[imagenFile.Size];
+            await imagenFile.OpenReadStream().ReadAsync(buffer);
+            producto.Imagen = buffer;
+            imageUrl = $"data:image/jpg; base64,{Convert.ToBase64String(buffer)}";
+        }
+    }
+    protected override void OnInitialized()
+    {
+        categorias = dataContext.Categorias.ToList();
+    }
+    protected async Task Save()
+    {
+        await ProductsService.InsertProduct(producto);
+        producto = new Producto();
+        imageUrl = "";
+        await JsRuntime.InvokeVoidAsync("alert", "Producto agregado");
+    }
+}

@@ -1,0 +1,144 @@
+﻿@page "/Config/Insertrole"
+@inject UserManager<IdentityUser> userManager
+@inject RoleManager<IdentityRole> roleManager
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Asignar Roles</h3>
+<label style="color: @color">@message</label>
+<AuthorizeView Roles="Administrator">
+    <Authorized Context="Auth">
+        <EditForm Model="@users" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Usuarios:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="iduser" class="form-control">
+                            <option value="" selected disabled hidden>-- Seleccione el Usuario --</option>
+                            @foreach (var use in users)
+                            {
+                                <option value="@use.Id">@use.UserName</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => iduser)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Roles:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="idrole" class="form-control">
+                            <option value="0" selected disabled hidden>-- Selecciona un Rol --</option>
+                            @foreach (var rol in roles)
+                            {
+                                <option value="@rol.Id">@rol.Name</option>
+                            }
+                            @if (roles == null)
+                            {
+                                <option value="">No hay roles registrados</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => idrole)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-success">
+                            <i class="oi oi-check"> Asignar Rol</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+        <br />
+        <br />
+        <EditForm Model="role" OnValidSubmit="AddR">
+            <div class="form-group">
+                <label class="control-label col-md-3">Agregar Nuevo Rol:</label>
+                <div class="col-md-10">
+                    <InputText type="text" class="form-control" @bind-Value="role.Name" placeholder="Ingrese el nombre del Rol" />
+                    <ValidationMessage For="@(() => newRol)" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <button type="submit" class="btn btn-success">
+                        <i class="oi oi-check"> Agregar Rol</i>
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+
+    </Authorized>
+    <NotAuthorized>
+        <h4>Usted no cuenta con el nivel de permiso suficiente.</h4>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    private IEnumerable<IdentityUser> users { get; set; }
+    private IEnumerable<IdentityRole> roles { get; set; }
+
+    [Required]
+    public string iduser { get; set; }
+    [Required]
+    public string idrole { get; set; }
+
+    string message = "";
+    string color = "";
+    [Required]
+    private string newRol { get; set; }
+    private IdentityRole role = new IdentityRole();
+
+    protected override void OnInitialized()
+    {
+        users = DbLogin.AspNetUsers.ToList();
+        roles = DbLogin.AspNetRoles.ToList();
+    }
+    protected async Task Save()
+    {
+        if (iduser != null && iduser != "")
+        {
+            if (idrole != null && idrole != "")
+            {
+                var userselect = DbLogin.AspNetUsers.Find(iduser);
+                var roleselect = DbLogin.AspNetRoles.Find(idrole);
+
+
+                await userManager.AddToRoleAsync(userselect, roleselect.Name);
+                color = "darkgreen";
+                message = $"Al usuario: {userselect.UserName}, se le asigno el rol: {roleselect.Name}";
+            }
+            else
+            {
+                color = "darkred";
+                message = "Tiene que seleccionar un Rol";
+            }
+        }
+        else
+        {
+            color = "darkred";
+            message = "Tiene que selecccionar un Usuario";
+        }
+    }
+    private async Task AddR()
+    {
+        //role.Name = newRol;
+
+        if (role.Name != null && role.Name != "")
+        {
+            await roleManager.CreateAsync(role);
+            roles = null;
+
+            role.Name = "";
+            roles = DbLogin.Roles.ToList();
+            message = "Rol agregardo correctamente: ";
+            color = "darkgreen";
+        }
+        else
+        {
+            message = "Tiene que agregar un Nombre al rol";
+            color = "darkred";
+        }
+    }
+}

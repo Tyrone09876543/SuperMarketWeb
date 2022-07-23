@@ -1,0 +1,120 @@
+﻿@page "/Config/EditProducts/{id:int}"
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Editar Datos del Producto</h3>
+<AuthorizeView Context="Auth">
+    <Authorized>
+        <EditForm Model="@producto" OnValidSubmit="Editar">
+            <DataAnnotationsValidator />
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Nombre:</label>
+                    <div class="col-md-10">
+                        <InputText type="text" class="form-control" @bind-Value="producto.Nombre" placeholder="Ingrese el nombre del producto" />
+                        <ValidationMessage For="@(() => producto.Nombre)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Precio:</label>
+                    <div class="col-md-10">
+                        <InputNumber type="number" class="form-control" @bind-Value="producto.Precio" placeholder="Ingrese el precio" />
+                        <ValidationMessage For="@(() => producto.Precio)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Categoria:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="producto.CategoriaId" class="form-control">
+                            <option value="0" selected disabled hidden>-- Selecciona una cateogria --</option>
+                            @foreach (var categoria in categorias)
+                            {
+                                <option value="@categoria.Id">@categoria.Nombre</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => producto.CategoriaId)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Cantidad:</label>
+                    <div class="col-md-10">
+                        <InputNumber class="form-control" @bind-Value="producto.Cantidad" />
+                        <ValidationMessage For="@(() => producto.Cantidad)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Marcar para editar Imagen: <InputCheckbox @bind-Value="check" /></label>
+                    <div class="col-md-10">
+                        <InputFile accept="png, jpeg, jpg" OnChange="HandleFileSelected"></InputFile>
+                        <ValidationMessage For="@(() => producto.Imagen)" />
+                    </div>
+                    @if (imageUrl != null)
+                    {
+                        <img src="@imageUrl" width="200" height="200">
+                    }
+
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-success">
+                            <i class="oi oi-plus"> Editar Producto</i>
+                        </button>
+                        <a class="btn btn-primary" href="/Config/ListProduct">Regresar a la lista</a>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <label>Solo los administradores pueden usar esta función</label>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private Producto producto = new Producto();
+    List<Categoria> categorias = new List<Categoria>();
+    string imageUrl = null;
+    bool check = false;
+    async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (check == true)
+        {
+            var imagenFile = e.GetMultipleFiles().FirstOrDefault();
+            string format = "image/jpg";
+            if (imagenFile != null)
+            {
+                var resized = await imagenFile.RequestImageFileAsync(format, 100, 100);
+                var buffer = new Byte[resized.Size];
+                await resized.OpenReadStream().ReadAsync(buffer);
+                producto.Imagen = buffer;
+                imageUrl = $"data:image/jpg; base64,{Convert.ToBase64String(buffer)}";
+            }
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        producto = await ProductsService.GetProduct(id);
+        imageUrl = $"data:image/jpg; base64,{Convert.ToBase64String(producto.Imagen)}";
+    }
+    protected override void OnInitialized()
+    {
+        categorias = dataContext.Categorias.ToList();
+    }
+    protected async Task Editar()
+    {
+        await ProductsService.SaveProduct(producto);
+        NavigationManager.NavigateTo("/Config/ListProducts");
+    }
+
+    private void EditFoto()
+    {
+        imageUrl = null;
+    }
+}

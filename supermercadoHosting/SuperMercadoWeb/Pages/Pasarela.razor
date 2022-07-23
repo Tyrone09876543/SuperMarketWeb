@@ -1,0 +1,221 @@
+@page "/Pasarela"
+@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JsRuntime
+@if(userId!= null) {
+<div class="container border">
+
+    <!-- Formulario -->
+    <div class="border row justify-content-center align-items-center">
+        <EditForm Model="@pago" OnValidSubmit="Comprar">
+            <DataAnnotationsValidator />
+            <i class="fab fa-paypal"></i>
+            <h1 style="margin-top: 10px">Registro de pago</h1>
+            <h4 style="margin-top: 10px">Precio total: @cantidadTotal DOP$</h4>
+
+            <div class="form-group">
+                <label for="" class="form-check-label">Nombre tarjeta</label>
+                <ValidationMessage For="@(() => pago.NombreTarjeta)" />
+                <input type="text" name="" id="" class="form-control" @bind-value="pago.NombreTarjeta">
+            </div>
+            <div class="form-group">
+                <label for="" class="form-check-label">Telefono contacto</label>
+                <ValidationMessage For="@(() => pago.Telefono)" />
+                <input type="text" name="" id="" class="form-control" @bind-value="pago.Telefono">
+            </div>
+
+            <div class="form-group">
+                <label for="" class="form-check-label">Número de Tarjeta</label>
+                <ValidationMessage For="@(() => pago.NumeroTarjeta)" />
+                <input type="text" id="inputNumero" class="form-control" @bind-value="pago.NumeroTarjeta">
+            </div>
+
+            <div>
+
+                <label for="selectMes">Expiracion</label>
+
+                <ValidationMessage For="@(() => pago.mesExpiracion)" />
+
+                <ValidationMessage For="@(() => pago.anioExpiracion)" />
+                <div class="form-inline">
+                    <div>
+                        MM:
+                        <input type="number" name="" id="" placeholder="MM" style="width: 45px; margin: 10px" @bind-value="pago.mesExpiracion">
+                    </div> /
+                    <div>
+                        YY:
+                        <input type="number" name="" id="" placeholder="YY" style="width: 45px; margin: 10px" @bind-value="pago.anioExpiracion">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputCCV">CCV</label>
+                    <ValidationMessage For="@(() => pago.Cvv)" />
+                    <input type="text" id="inputCCV" class="form-control" @bind-value="pago.Cvv">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="form-check-label">Direccion</label>
+                <ValidationMessage For="@(() => pago.Direccion)" />
+                <input type="text" name="" id="" class="form-control" @bind-value="pago.Direccion">
+            </div>
+            <div class="form-group">
+                <label for="" class="form-check-label">Latitud</label>
+                <ValidationMessage For="@(() => pago.Latitud)" />
+                <input type="number" name="" id="" class="form-control" @bind-value="pago.Latitud">
+            </div>
+            <div class="form-group">
+                <label for="" class="form-check-label">Longitud</label>
+                <ValidationMessage For="@(() => pago.Longitud)" />
+                <input type="number" name="" id="" class="form-control" @bind-value="pago.Longitud">
+            </div>
+            <div class="form-group">
+                <label for="" class="form-check-label">Comentario</label>
+                <textarea class="form-control" @bind="pago.comentario"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-bottom: 20px">Enviar</button>
+        </EditForm>
+    </div>
+</div>
+}
+@code{
+    Pago pago = new Pago();
+    string userId;
+    double cantidadTotal;
+    List<Carrito> carritos = new List<Carrito>();
+    List<Producto> products = new List<Producto>();
+    async Task Comprar()
+    {
+        if (userId != null) {
+            actualizarPrecioTotal();
+            bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "El precio total es: "+cantidadTotal+"\nDesea proseguir con el pago?");
+
+            if (confirmed)
+            {
+                bool ok = true;
+                foreach(Carrito carrito in carritos)
+                {
+                    var producto = products.Where(x => x.Id == carrito.ProductoId).FirstOrDefault();
+                    if(producto != null)
+                    {
+                        if (carrito.Cantidad > producto.Cantidad)
+                        {
+                            await alerta($"Solo quedan {producto.Cantidad} del producto {producto.Nombre} y tú pides {carrito.Cantidad}");
+                            ok = false;
+                            break;
+                        }
+                    }
+                }
+                if (ok)
+                {
+                    Pedido pedido = new Pedido();
+                    pedido.PrecioTotal = 0;
+                    List<PedidosItem> pedidosItems = new List<PedidosItem>();
+                    foreach (Carrito carrito in carritos)
+                    {
+                        Producto producto = products.Where(x => x.Id == carrito.ProductoId).FirstOrDefault();
+                        if (producto != null)
+                        {
+                            pedido.PrecioTotal = pedido.PrecioTotal + (producto.Precio * carrito.Cantidad);
+                            producto.Cantidad = producto.Cantidad - carrito.Cantidad;
+                            pedidosItems.Add(new PedidosItem { ProductoId = producto.Id, Cantidad = carrito.Cantidad, PrecioUnidad = producto.Cantidad });
+                        }
+
+                        dataContext.Remove(carrito);
+                    }
+                    pedido.Telefono = pago.Telefono;
+                    pedido.Latitud = pago.Latitud;
+                    pedido.Longitud = pago.Longitud;
+                    pedido.Direccion = pago.Direccion;
+                    pedido.Estado = "Proceso";
+                    pedido.UserId = userId;
+                    pedido.Comentario = pago.comentario;
+                    await dataContext.AddAsync(pedido);
+                    await dataContext.SaveChangesAsync();
+                    foreach (var pedidoItem in pedidosItems)
+                    {
+                        pedidoItem.IdPedido = pedido.Id;
+                        dataContext.PedidosItems.Add(pedidoItem);
+                    }
+                    await dataContext.SaveChangesAsync();
+                    NavigationManager.NavigateTo("/MisPedidos");
+
+                }
+            }
+        }
+    }
+    void actualizarPrecioTotal()
+    {
+        double resultado = 0;
+        foreach(Carrito carrito in carritos)
+        {
+            var producto = products.Where(x => x.Id == carrito.ProductoId).FirstOrDefault();
+            if (producto != null)
+            {
+                resultado += carrito.Cantidad * producto.Precio;
+            }
+
+        }
+        cantidadTotal = resultado;
+    }
+    protected override void OnInitialized()
+    {
+        var principal = HttpContextAccessor.HttpContext.User;
+        userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userId != null)
+        {
+            carritos = dataContext.Carritos.Where(x => x.UserId == userId).ToList();
+            products = dataContext.Productos.ToList();
+            actualizarPrecioTotal();
+        }
+        else
+        {
+            alerta("Debe estar logeado para esto");
+        }
+    }
+    async Task alerta(string mensaje)
+    {
+        await JsRuntime.InvokeVoidAsync("alert", mensaje);
+    }
+    class Pago
+    {
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        public string NombreTarjeta { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        [RegularExpression(@"[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}",
+     ErrorMessage = "Las tarjetas son xxxx-xxxx-xxxx-xxxx")]
+        public string NumeroTarjeta { get; set; }
+
+        [Required(ErrorMessage = "El mes es obligatorio")]
+        [Range(1,12, ErrorMessage = "El mes debe de ser entre 1 y 12")]
+        public int mesExpiracion { get; set; }
+
+        [Required(ErrorMessage = "El año es obligatorio")]
+        [Range(21, 99, ErrorMessage = "El año debe de ser entre 20 y 99")]
+        public int anioExpiracion { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        [RegularExpression(@"[0-9]{3}",
+     ErrorMessage = "El cvv son 3 digitos")]
+        public int Cvv { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        [RegularExpression(@"[0-9]{10}",
+     ErrorMessage = "El telefono debe ser xxxxxxxxxx")]
+        public string Telefono { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        public string Direccion { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        public double Latitud { get; set; }
+
+        [Required(ErrorMessage = "Este campo es obligatorio")]
+        public double Longitud { get; set; }
+
+        public string comentario { get; set; }
+    }
+}

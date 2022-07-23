@@ -1,0 +1,38 @@
+﻿@page "/Config/EditCategorias/{id:int}"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<h3>AddCategorias</h3>
+<EditForm Model="@categoria" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+    <div class="form-horizontal">
+
+        <div class="form-group">
+            <label class="control-label col-md-2">Nombre:</label>
+            <div class="col-md-10">
+                <InputText type="text" class="form-control" @bind-Value="categoria.Nombre" placeholder="Ingrese el nombre de la categoría" />
+                <ValidationMessage For="@(() => categoria.Nombre)" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <button type="submit" class="btn btn-success">
+                    <i class="oi oi-plus"> Editar categoria</i>
+                </button>
+            </div>
+        </div>
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public int id { get; set; }
+    Categoria categoria;
+    async Task Save()
+    {
+        await dataContext.SaveChangesAsync();
+        await JsRuntime.InvokeVoidAsync("alert", "Categoria editada correctamente");
+    }
+    protected override void OnInitialized()
+    {
+        categoria = dataContext.Categorias.Find(id);
+    }
+}

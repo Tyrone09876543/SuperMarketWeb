@@ -1,0 +1,64 @@
+﻿@page "/Config/DetailsUser/Pedido/{id:int}"
+@using Radzen
+@using Radzen.Blazor
+@attribute [Authorize(Roles = "Administrator, Standard")]
+<h3>Detalles pedido</h3>
+
+@if (pedido != null)
+{
+    <p><b>Id: </b> @pedido.Id</p>
+    <p><b>Id usuario: </b>@pedido.UserId</p>
+    <p><b>Precio total: </b>@pedido.PrecioTotal</p>
+    <p><b>Estado: </b>@pedido.Estado</p>
+    <p><b>Direccion: </b>@pedido.Direccion</p>
+    <p><b>Latitud: </b>@pedido.Latitud</p>
+    <p><b>Longitud: </b>@pedido.Longitud</p>
+    <p><b>Comentario: </b>@pedido.Comentario</p>
+    <div class="row">
+        <div class="col-x1-6">
+            <RadzenGoogleMap Style="height: 400px; width: 600px; " zoom="@zoom" Center="@(new GoogleMapPosition() {Lat = pedido.Latitud, Lng = pedido.Longitud})">
+                <Markers>
+                    <RadzenGoogleMapMarker Title="@pedido.Id.ToString()" Label="@pedido.Estado" Position="@(new GoogleMapPosition() {Lat = pedido.Latitud, Lng = pedido.Longitud})" />
+                </Markers>
+            </RadzenGoogleMap>
+        </div>
+    </div>
+    <br />
+    <br />
+}
+<table class="table">
+    <thead class="thead-dark">
+        <tr style="text-align:center;">
+            <th scope="col">Id</th>
+            <th scope="col">Id producto</th>
+            <th scope="col">Cantidad</th>
+            <th scope="col">Precio unidad</th>
+            <th scope="col">Precio Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var pedidoItem in pedidosItems)
+        {
+            <tr style="text-align:center;">
+                <td>@pedidoItem.Id</td>
+                <td>@pedidoItem.ProductoId</td>
+                <td>@pedidoItem.Cantidad</td>
+                <td>@pedidoItem.PrecioUnidad</td>
+                <td>@(pedidoItem.Cantidad*pedidoItem.PrecioUnidad)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    [Parameter]
+    public int id { get; set; }
+    double zoom = 3;
+    List<PedidosItem> pedidosItems = new List<PedidosItem>();
+    Pedido pedido;
+    protected override void OnInitialized()
+    {
+        pedido = dataContext.Pedidos.Find(id);
+        pedidosItems = dataContext.PedidosItems.Where(x => x.IdPedido == id).ToList();
+    }
+
+}

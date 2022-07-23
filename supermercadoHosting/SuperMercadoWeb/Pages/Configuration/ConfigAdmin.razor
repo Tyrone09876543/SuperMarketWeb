@@ -1,0 +1,51 @@
+﻿@page "/Config"
+@attribute [Authorize(Roles = "Administrator")]
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Productos</p>
+    </a>
+    <a href="/Config/ListProducts" class="list-group-item list-group-item-action">Lista de productos</a>
+    <a href="/Config/AddProducts" class="list-group-item list-group-item-action">Agregar producto</a>
+</div>
+<br />
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Categorías</p>
+    </a>
+    <a href="/Config/ListCategorias" class="list-group-item list-group-item-action">Lista de categorias</a>
+    <a href="/Config/AddCategorias" class="list-group-item list-group-item-action">Agregar categoria</a>
+</div>
+<br />
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Pedidos</p>
+    </a>
+    <a href="/Config/ListPedidos" class="list-group-item list-group-item-action">Lista de pedidos</a>
+</div>
+<br />
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Slider</p>
+    </a>
+    <a href="/Config/ListSlider" class="list-group-item list-group-item-action">Items del slider</a>
+    <a href="/Config/AddSlider" class="list-group-item list-group-item-action">Agregar item al slider</a>
+</div>
+<br />
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Usuarios</p>
+    </a>
+    <a href="/Config/ListUsers" class="list-group-item list-group-item-action">Lista de usuarios</a>
+    <a href="/Config/ListCumple" class="list-group-item list-group-item-action">Cumpleaños y csv</a>
+</div>
+<br />
+<div class="list-group">
+    <a class="list-group-item list-group-item-action active">
+        <p style="color:white;">Roles</p>
+    </a>
+    <a href="/Config/ListRoles" class="list-group-item list-group-item-action">Lista de Roles</a>
+</div>
+<br />
+@code {
+
+}

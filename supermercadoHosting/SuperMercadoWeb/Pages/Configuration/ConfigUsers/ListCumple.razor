@@ -1,0 +1,49 @@
+﻿@page "/Config/ListCumple"
+@using System.Text;
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Lista por cumpleaños</h3>
+<table class="table">
+    <thead class="thead-dark">
+        <tr style="text-align:center;">
+            <th scope="col">Nombre</th>
+            <th scope="col">Fecha de nacimiento</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (KeyValuePair<string, string> usuario in usuarios)
+        {
+            <tr style="text-align:center;">
+                <td>@usuario.Key</td>
+                <td>@usuario.Value</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a class="btn btn-primary" download="Cumples.csv" href="@getCsvUrl()">Exportar a csv</a>
+@code {
+    Dictionary<string, string> usuarios = new Dictionary<string, string>();
+    protected override void OnInitialized()
+    {
+        usuarios = new Dictionary<string, string>();
+        foreach(var aspUser in dataContext.AspNetUsers.ToList())
+        {
+            var usuario = dataContext.Usuarios.Where(x => x.UserId == aspUser.Id).FirstOrDefault();
+            if(usuario != null)
+            {
+                usuarios.Add(aspUser.NormalizedUserName, usuario.Fnacimiento.ToString("dd/MM/yyyy"));
+            }
+
+        }
+    }
+    string getCsvUrl()
+    {
+        string csvString = "Nombre, Fecha_Nacimiento";
+        foreach (KeyValuePair<string, string> usuario in usuarios)
+        {
+            csvString += $"\n{usuario.Key},{usuario.Value}";
+        }
+        byte[] csvBytes = Encoding.ASCII.GetBytes(csvString);
+        string csvUrl = $"data:text/csv; base64,{Convert.ToBase64String(csvBytes)}";
+        return csvUrl;
+    }
+}

@@ -1,0 +1,101 @@
+﻿@page "/Config/ListProducts"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<label>Filtrar por categoria: </label>
+<select @bind="filtro" class="form-control">
+    <option value="">-- Seleccione una categoria --</option>
+    @foreach (Categoria categoria in categorias)
+    {
+        <option value="@categoria.Id">@categoria.Nombre</option>
+    }
+</select>
+<br />
+<button class="btn btn-primary" @onclick="actualizar">Filtrar</button>
+<br />
+<label>Buscar Id: </label>
+<input type="number" @bind="Id" />
+<br />
+<button class="btn btn-primary" @onclick="buscar">Buscar</button>
+<h3>Lista de productos</h3>
+
+@if (productos == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead class="thead-dark">
+            <tr style="text-align:center;">
+                <th scope="col">Id</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Precio</th>
+                <th scope="col">Categoria</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Foto</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in productos)
+            {
+                <tr style="text-align:center;">
+                    <td>@producto.Id</td>
+                    <td>@producto.Nombre</td>
+                    <td>@producto.Precio</td>
+
+
+                    @foreach (var item in categorias)
+                    {
+                        if (item.Id == producto.CategoriaId)
+                        {
+                            <td>@item.Nombre</td>
+                        }
+
+                    }
+                    <td>@producto.Cantidad</td>
+
+                    <td><img src="data:image/jpg; base64,@Convert.ToBase64String(producto.Imagen)" alt="Alternate Text" /></td>
+                    <td>
+                        <a href="/Config/EditProducts/@producto.Id" class="btn btn-primary btn-xs" title="Editar">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+
+                        <button @onclick="() => Eliminar(producto.Id)" class="btn btn-danger btn-xs" title="Eliminar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    int filtro;
+    int Id;
+    private IEnumerable<Producto> productos { get; set; }
+    List<Categoria> categorias = new List<Categoria>();
+    void actualizar()
+    {
+        productos = dataContext.Productos.Where(x => x.CategoriaId == filtro).ToList();
+    }
+    void buscar()
+    {
+        productos = dataContext.Productos.Where(x => x.Id == Id).ToList();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        productos = await ProductsService.GetAllProducts();
+        categorias = dataContext.Categorias.ToList();
+    }
+    protected async Task Eliminar(int id)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Estás seguro que quieres eliminar el producto " + id + "?");
+        if (confirmed)
+        {
+            await ProductsService.DeleteProduct(id);
+            productos = null;
+            productos = await ProductsService.GetAllProducts();
+        }
+    }
+}

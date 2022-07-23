@@ -1,0 +1,77 @@
+﻿@page "/Config/AddSlider"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Agregar item al Slider</h3>
+<br />
+<h5>Agregue un video o una imagen</h5>
+<AuthorizeView Context="Auth" Roles="Administrator">
+    <Authorized>
+        <EditForm Model="@slider" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="control-label col-md-2">Codigo del video:</label>
+                    <div class="col-md-10">
+                        <InputText type="text" class="form-control" @bind-Value="slider.VideoUrl" placeholder="Ingrese el codigo del video" />
+                        <ValidationMessage For="@(() => slider.VideoUrl)" />
+                    </div>
+                </div>
+                @if (slider.VideoUrl != null)
+                {
+                    @if (slider.VideoUrl.Trim() != "")
+                    {
+                        <iframe width="500" height="281" src="https://www.youtube.com/embed/@slider.VideoUrl" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    }
+                }
+            <div class="form-group">
+                <label class="control-label col-md-2">Imagen:</label>
+                <div class="col-md-10">
+                    <InputFile accept="png, jpeg, jpg" OnChange="HandleFileSelected"></InputFile>
+                    <ValidationMessage For="@(() => slider.Imagen)" />
+                </div>
+
+                @if (imageUrl != null)
+                {
+                    <br />
+                    <img src="@imageUrl" style="height:200px; max-width:300px;">
+                }
+            </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-success">
+                            <i class="oi oi-plus"> Agragar al Slider</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <label>Usted no cuenta con el nivel de permiso suficiente.</label>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    Slider slider = new Slider();
+    string imageUrl = null;
+    async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var imagenFile = e.GetMultipleFiles().FirstOrDefault();
+        if (imagenFile != null)
+        {
+            var buffer = new Byte[imagenFile.Size];
+            await imagenFile.OpenReadStream().ReadAsync(buffer);
+            slider.Imagen = buffer;
+            imageUrl = $"data:image/jpg; base64,{Convert.ToBase64String(buffer)}";
+
+        }
+    }
+    protected async Task Save()
+    {
+        await dataContext.AddAsync(slider);
+        await dataContext.SaveChangesAsync();
+        slider = new Slider();
+        imageUrl = "";
+        await JsRuntime.InvokeVoidAsync("alert", "Item agregado al slider");
+    }
+}

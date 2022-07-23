@@ -1,0 +1,82 @@
+﻿@page "/Config/DetailsUser/{id}"
+@attribute [Authorize(Roles = "Administrator, Standard")]
+<h3>Detalles del usuario</h3>
+@if (user != null)
+{
+    <div>
+        <h4 style="        text-align: center;
+        color: white;
+        padding: 10px;
+        border-radius:5px;
+        background-color: rgba(6, 7, 29,0.5)">
+            Datos del Usuario
+        </h4>
+        <hr />
+        <dl class="dl-horizontal">
+
+            <dt>
+                Nombre de Usuario
+            </dt>
+
+            <dd>
+                @user.UserName
+            </dd>
+
+            <dt>
+                Email
+            </dt>
+
+            <dd>
+                @user.Email
+            </dd>
+
+        </dl>
+
+    </div>
+}
+<hr />
+<h4>Pedidos Hechos Por el usuario</h4>
+<table class="table">
+    <thead class="thead-dark">
+        <tr style="text-align:center;">
+            <th scope="col">Id</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Precio Total</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var pedido in pedidos)
+        {
+            <tr style="text-align:center;">
+                <td>@pedido.Id</td>
+                <td>@pedido.Estado</td>
+                <td>@pedido.PrecioTotal</td>
+                <td>
+                    <a href="/Config/DetailsUser/Pedido/@pedido.Id" class="btn btn-primary btn-xs" title="Detalles del pedido">
+                        Detalles
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div class="form-group">
+    <div class="col-md-offset-0 col-md-10">
+        <a class="btn btn-primary" href=""><i class="glyphicon glyphicon-th-list"></i> Regresar a la lista</a>
+        <a class="btn btn-primary" href=""><i class="glyphicon glyphicon-pencil"></i> Editar Registro</a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    AspNetUser user;
+    List<Pedido> pedidos = new List<Pedido>();
+    protected override void OnInitialized()
+    {
+        user = dataContext.AspNetUsers.Where(x => x.Id == id).OrderByDescending(x => x.Id).FirstOrDefault();
+        pedidos = dataContext.Pedidos.Where(x => x.UserId == id).ToList();
+    }
+
+}

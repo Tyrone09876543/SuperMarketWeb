@@ -1,0 +1,81 @@
+﻿@page "/Config/ListUsers"
+@attribute [Authorize(Roles = "Administrator, Standard")]
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration _conf
+<h3>Lista de Usuarios</h3>
+@if (userModels == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else if (userModels == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead class="thead-dark">
+            <tr style="text-align:center;">
+                <th scope="col">Nombre</th>
+                <th scope="col">Email</th>
+                <th scope="col">Rol</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in userModels)
+            {
+                <tr style="text-align:center;">
+                    <td>@user.UserName</td>
+                    <td>@user.Email</td>
+
+                    <td>
+                        @user.RoleName
+                    </td>
+
+                    <td>
+                        <AuthorizeView Roles="Administrator">
+                            @*<button @onclick="() => Eliminar(user.UserId)" class="btn btn-danger btn-xs" title="Eliminar">
+                                <i class="oi oi-trash"></i>
+                            </button>*@
+                        </AuthorizeView>
+                        <a href="/Config/DetailsUser/@user.UserId" class="btn btn-primary btn-xs" title="Detalles">
+                            Detalles
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    IdentityUser userslist = new IdentityUser();
+    IdentityRole roleslist = new IdentityRole();
+
+    IEnumerable<IdentityUserRole<string>> userRoles { get; set; }
+
+    List<RoleUserModel> userModels = new List<RoleUserModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        userRoles = await DbLogin.AspNetUserRoles.ToListAsync();
+
+        foreach (var item in userRoles)
+        {
+            userslist = await DbLogin.AspNetUsers.FindAsync(item.UserId);
+            roleslist = await DbLogin.AspNetRoles.FindAsync(item.RoleId);
+
+            userModels.Add(new RoleUserModel
+            {
+                UserId = userslist.Id,
+                UserName = userslist.UserName,
+                Email = userslist.Email,
+                RoleId = roleslist.Id,
+                RoleName = roleslist.Name
+            });
+        }
+    }
+
+
+}
+

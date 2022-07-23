@@ -1,0 +1,75 @@
+﻿@page "/Config/ListSlider"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<label>Buscar Id: </label>
+<input type="number" @bind="Id" />
+<br />
+<button class="btn btn-primary" @onclick="buscar">Buscar</button>
+<h3>Lista de items del slider</h3>
+
+@if (sliders == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead class="thead-dark">
+            <tr style="text-align:center;">
+                <th scope="col">Id</th>
+                <th scope="col">Imagen o video</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var slider in sliders)
+            {
+                <tr style="text-align:center;">
+                    <td>@slider.Id</td>
+
+                    <td>
+                        @if (slider.Imagen != null)
+                        {
+                            <img style="width:200px;max-height:200px;" src="data:image/jpg; base64,@Convert.ToBase64String(slider.Imagen)" alt="Alternate Text" />
+                        }
+                        else
+                        {
+                            <iframe width="200" height="112" src="@("https://www.youtube.com/embed/"+slider.VideoUrl)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        }
+                    </td>
+                    <td>
+                        <a href="/Config/EditSlider/@slider.Id" class="btn btn-primary btn-xs" title="Editar">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+
+                        <button @onclick="() => Eliminar(slider)" class="btn btn-danger btn-xs" title="Eliminar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    List<Slider> sliders;
+    int Id;
+    void buscar()
+    {
+        sliders = dataContext.Sliders.Where(x => x.Id == Id).ToList();
+    }
+    protected override void OnInitialized()
+    {
+        sliders = dataContext.Sliders.ToList();
+    }
+    protected async Task Eliminar(Slider slider)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Estás seguro que quieres eliminar el item " + slider.Id + "?");
+        if (confirmed)
+        {
+            dataContext.Sliders.Remove(slider);
+            await dataContext.SaveChangesAsync();
+            sliders = dataContext.Sliders.ToList();
+        }
+    }
+}

@@ -1,0 +1,72 @@
+﻿@page "/Config/EditPedidos/{id:int}"
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Editar el Pedido</h3>
+<AuthorizeView Context="Auth" Roles="Administrator">
+    <Authorized>
+        @if (pedido == null)
+        {
+            <p><em>Cargando...</em></p>
+        }
+        else
+        {
+            <p><b>Id: </b> @pedido.Id</p>
+            <p><b>Id usuario: </b>@pedido.UserId</p>
+            <p><b>Precio total: </b>@pedido.PrecioTotal</p>
+            <p><b>Estado: </b>@pedido.Estado</p>
+            <p><b>Direccion: </b>@pedido.Direccion</p>
+            <p><b>Latitud: </b>@pedido.Latitud</p>
+            <p><b>Longitud: </b>@pedido.Longitud</p>
+            <p><b>Comentario: </b>@pedido.Comentario</p>
+            <br />
+            <h4>Solo puedes editar el estado</h4>
+            <div class="form-group">
+                <label class="control-label col-md-2">Estado:</label>
+                <div class="col-md-10">
+                    <select @bind="estado" class="form-control">
+                        <option value="0">Proceso</option>
+                        <option value="1">Enviado</option>
+                        <option value="2">Completado</option>
+                    </select>
+                </div>
+            </div>
+            <br />
+            <button class="btn btn-primary" @onclick="guardar">Editar</button>
+            <br />
+        }
+    </Authorized>
+    <NotAuthorized>
+        <label>Usted no cuenta con el nivel de permiso suficiente.</label>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    string estado;
+    double zoom = 3;
+    [Parameter]
+    public int id { get; set; }
+    Pedido pedido;
+    async Task guardar()
+    {
+        switch (estado)
+        {
+            case "0":
+                pedido.Estado = "Proceso";
+                break;
+            case "1":
+                pedido.Estado = "Enviado";
+                break;
+            default:
+                pedido.Estado = "Completado";
+                break;
+        }
+        await dataContext.SaveChangesAsync();
+        pedido = dataContext.Pedidos.Where(x => x.Id == id).FirstOrDefault();
+        await JsRuntime.InvokeVoidAsync("alert", "Cambio completado");
+
+
+    }
+    protected override void OnInitialized()
+    {
+        pedido = dataContext.Pedidos.Where(x => x.Id == id).FirstOrDefault();
+    }
+}

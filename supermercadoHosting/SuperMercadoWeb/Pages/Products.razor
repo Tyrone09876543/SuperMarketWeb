@@ -1,0 +1,122 @@
+﻿@page "/Products"
+@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JsRuntime
+
+
+<h1 class="mb-4" style="width: max-content; border-block-end: 4px solid cornflowerblue; border-radius: 10%">Productos</h1>
+
+<div class="d-flex mb-3">
+    <button type="button" class="btn btn-primary mr-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Filtrar por categoria" @onclick="actualizar">
+        filtrar
+    </button>
+
+    <select @bind="filtro" class="form-control" style="width: max-content;">
+        <option value="">-- Seleccione una categoria --</option>
+        @foreach (Categoria categoria in categorias)
+        {
+            <option value="@categoria.Id">@categoria.Nombre</option>
+        }
+    </select>
+</div>
+
+<div class="d-flex mb-5">
+    <button type="button" class="btn btn-primary mr-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Buscar por nombre" @onclick="buscar">
+        Buscar
+    </button>
+
+    <input type="text" @bind="nombre" placeholder="Buscar por nombre" style="height:38px" />
+
+</div>
+
+
+
+@if (cargando)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <div class="row row-cols-2 row-cols-md-3 justify-content-center">
+        @foreach (var producto in productos)
+        {
+            <div class="col-4 mb-5">
+                <div class="card h-100">
+                    <!-- imagen-->
+                    <img class="card-img-top" style="width: 100%; max-height: 200px; min-height: 150px;" src="data:image/jpg;base64,@Convert.ToBase64String(producto.Imagen)" alt="..." />
+                    <!-- detalles del producto-->
+                    <div class="card-body p-4">
+                        <div class="text-center">
+                            <h5 class="fw-bolder">@producto.Nombre</h5>
+                            <br />
+                            @producto.Precio DOP$
+                            <br />
+                            Cantidad restante: @producto.Cantidad
+                            <br />
+                            Categoría: @if (categorias.Where(x => x.Id == producto.CategoriaId).FirstOrDefault() != null)
+                            {
+                                @categorias.Where(x => x.Id == producto.CategoriaId).FirstOrDefault().Nombre;
+                            }
+                        </div>
+                    </div>
+                    <!-- boton-->
+                    <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                        <div class="text-center">
+                            <a class="btn btn-outline-primary mt-auto" @onclick="() => anadir(producto.Id)">Añadir al carrito</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    int filtro;
+    String nombre = "";
+    List<Producto> productos = new List<Producto>();
+    List<Categoria> categorias = new List<Categoria>();
+    List<Carrito> carritos = new List<Carrito>();
+    bool cargando = true;
+    async Task anadir(int productId)
+    {
+        var principal = HttpContextAccessor.HttpContext.User;
+        var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId != null)
+        {
+            var carrito = dataContext.Carritos.Where(x => x.UserId == userId && x.ProductoId == productId).FirstOrDefault();
+            if (carrito != null)
+            {
+                carrito.Cantidad += 1;
+            }
+            else
+            {
+                await dataContext.Carritos.AddAsync(new Carrito { ProductoId = productId, Cantidad = 1, UserId = userId });
+            }
+            await dataContext.SaveChangesAsync();
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("alert", "Debe estar logeado para agregar productos al carrito");
+        }
+    }
+    void actualizar()
+    {
+        cargando = true;
+        productos = dataContext.Productos.Where(x => x.CategoriaId == filtro).ToList();
+        cargando = false;
+    }
+    void buscar()
+    {
+        cargando = true;
+        productos = dataContext.Productos.Where(x => x.Nombre.Contains(nombre)).ToList();
+        cargando = false;
+    }
+    protected override void OnInitialized()
+    {
+
+        productos = dataContext.Productos.ToList();
+        categorias = dataContext.Categorias.ToList();
+        cargando = false;
+    }
+}

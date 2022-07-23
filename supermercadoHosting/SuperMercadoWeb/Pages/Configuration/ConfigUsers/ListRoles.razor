@@ -1,0 +1,51 @@
+﻿@page "/Config/ListRoles"
+@inject RoleManager<IdentityRole> roleManager
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Lista de Roles</h3>
+<AuthorizeView Roles="Administrator">
+    <Authorized>
+        @if (netRoles == null)
+        {
+            <p><em>Cargando...</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <thead class="thead-dark">
+                    <tr style="text-align:center;">
+                        <th scope="col">Nombre</th>
+                        <th scope="col">NormalizedName</th>
+                        <th scope="col">Concurrency Stamp</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var role in netRoles)
+                    {
+                        <tr style="text-align:center;">
+                            <td>@role.Name</td>
+                            <td>@role.NormalizedName</td>
+                            <td>@role.ConcurrencyStamp</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <br />
+            <a href="/Config/Insertrole" class="btn btn-primary">
+                <i class="oi oi-plus"> Asignar o Crear Rol</i>
+            </a>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <h4>Usted no cuenta con el nivel de permiso suficiente.</h4>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    private IEnumerable<IdentityRole> netRoles { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        netRoles = await UserService.GetAllRoles();
+    }
+}
+
