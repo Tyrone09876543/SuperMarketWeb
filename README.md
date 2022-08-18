@@ -1,6 +1,10 @@
 # SuperMarketWeb
 
+C# Blazor
+
 ---------- Español -------------
+
+Video: https://youtu.be/spfMqkFH6-g
 
 Este proyecto ya no se puede conectar a la base de datos debido a que se esta ha sido eliminada del host. 
 
@@ -21,6 +25,8 @@ Los administradores pueden:
   Modificar el carrousel de la pagina de inicio
   
 ---------- English -------------
+
+Video: https://youtu.be/spfMqkFH6-g
 
 This project can no longer connect to the database because the database has been removed from the host.
 
